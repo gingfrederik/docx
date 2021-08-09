@@ -76,17 +76,6 @@ func (f *File) Write(writer io.Writer) (err error) {
 	return f.pack(zipWriter)
 }
 
-// AddParagraph add new paragraph
-func (f *File) AddParagraph() *Paragraph {
-	p := &Paragraph{
-		Data: make([]interface{}, 0),
-		file: f,
-	}
-
-	f.Document.Body.Content = append(f.Document.Body.Content, p)
-	return p
-}
-
 func (f *File) addLinkRelation(link string) string {
 	rel := &RelationShip{
 		ID:         "rId" + strconv.Itoa(f.rId),

@@ -19,6 +19,7 @@ type TableProperties struct {
 type TableWidth struct {
 	XMLName xml.Name `xml:"w:tblW"`
 	Width   int      `xml:"w:w,attr"`
+	Type    string   `xml:"w:type,attr"`
 }
 
 type TableGrid struct {
@@ -29,6 +30,7 @@ type TableGrid struct {
 type tableGridCol struct {
 	XMLName xml.Name `xml:"w:gridCol"`
 	Width   int      `xml:"w:w,attr"`
+	Type    string   `xml:"w:type,attr"`
 }
 
 type Row struct {
@@ -44,14 +46,21 @@ type RowProperties struct {
 }
 
 type Cell struct {
-	XMLName xml.Name `xml:"w:tc"`
-	Data    []interface{}
-	row     *Row
+	XMLName    xml.Name `xml:"w:tc"`
+	Data       []interface{}
+	Properties *CellProperties
+	row        *Row
 }
 
 type CellProperties struct {
-	XMLName xml.Name `xml:"w:rPr"`
+	XMLName xml.Name `xml:"w:tcPr"`
 	Data    []interface{}
+}
+
+type cellWidth struct {
+	XMLName xml.Name `xml:"w:tcW"`
+	Width   int      `xml:"w:w,attr"`
+	Type    string   `xml:"w:type,attr"`
 }
 
 // AddTable is adding table to document
@@ -88,17 +97,28 @@ func (t *Table) AddRow() *Row {
 	return r
 }
 
-// AddCell is adding cell to row
-func (r *Row) AddCell() *Cell {
+// AddCell is adding cell to row, takes width in twips
+func (r *Row) AddCell(width int) *Cell {
+	tcProps := &CellProperties{}
 	c := &Cell{
-		row: r,
+		row:        r,
+		Properties: tcProps,
 	}
 	r.Data = append(r.Data, c)
-	cell := &tableGridCol{
-		Width: 4098,
+	gridCol := &tableGridCol{
+		Width: width,
+		Type:  "dxa",
 	}
-	r.table.grid.Data = append(r.table.grid.Data, cell)
-	r.table.properties.width.Width += 4098
+	tcW := &cellWidth{
+		Width: width,
+		Type:  "dxa",
+	}
+	tcProps.Data = append(tcProps.Data, tcW)
+	// Do not add more width than we have columns
+	if len(r.Data) > len(r.table.grid.Data) {
+		r.table.grid.Data = append(r.table.grid.Data, gridCol)
+		r.table.properties.width.Width += width
+	}
 
 	return c
 }

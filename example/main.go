@@ -12,17 +12,17 @@ func main() {
 	for i := 0; i < 3; i++ {
 		row := t.AddRow()
 		for i := 0; i < 3; i++ {
-			c := row.AddCell()
+			c := row.AddCell(2 * docx.CM)
 			c.AddText("Hello").Size(20).Color("4900db")
 		}
 	}
 	row := t.AddRow()
-	c := row.AddCell()
+	c := row.AddCell(2 * docx.CM)
 	c.AddText("One column")
 	row = t.AddRow()
-	c = row.AddCell()
+	c = row.AddCell(2 * docx.CM)
 	c.AddText("Two columns")
-	c = row.AddCell()
+	c = row.AddCell(2 * docx.CM)
 	c.AddText("Two columns")
 	// Adding new paragraph
 	para := f.AddParagraph()

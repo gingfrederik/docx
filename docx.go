@@ -15,6 +15,6 @@ type Document struct {
 }
 
 type Body struct {
-	XMLName   xml.Name `xml:"w:body"`
-	Paragraph []*Paragraph
+	XMLName xml.Name `xml:"w:body"`
+	Content []interface{}
 }

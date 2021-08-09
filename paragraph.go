@@ -8,6 +8,8 @@ const (
 	JUSTIFY_BOTH       = "both"
 	JUSTIFY_CENTER     = "center"
 	JUSTIFY_DISTRIBUTE = "distribute"
+	CM                 = 567
+	INCH               = 1440
 )
 
 type Paragraph struct {
@@ -25,6 +27,12 @@ type ParagraphProperties struct {
 type Justification struct {
 	XMLName xml.Name `xml:"w:jc"`
 	Val     string   `xml:"w:val,attr"`
+}
+
+type Indentation struct {
+	XMLName xml.Name `xml:"w:ind"`
+	Left    int      `xml:"w:left,attr"`
+	Right   int      `xml:"w:right,attr"`
 }
 
 type LineBreak struct {
@@ -92,6 +100,20 @@ func (p *Paragraph) AddNewPage() {
 	p.Data = append(p.Data, &LineBreak{Type: "page"})
 }
 
+// Justification takes justificaiton type
+// Possible values are in constants:
+// JUSTIFY_START align to the left
+// JUSTIFY_END align to the right
+// JUSTIFY_BOTH align to both sides with regular spaces
+// JUSTIFY_DISTRIBUTE align to both sides with wider spaces
+// JUSTIFY_CENTER align to the center of line
 func (prp *ParagraphProperties) Justification(justificaiton string) {
 	prp.Data = append(prp.Data, &Justification{Val: justificaiton})
+}
+
+// Indentation takes left and right indentation for paragraph in twips
+// There is constant CM which is equal to 567 twips per centimeter
+// There is constant INCH which is equal to 1440 twips per inch
+func (prp *ParagraphProperties) Indentation(left, right int) {
+	prp.Data = append(prp.Data, &Indentation{Left: left, Right: right})
 }

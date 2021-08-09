@@ -45,7 +45,7 @@ func NewFile() *File {
 				XMLName: xml.Name{
 					Space: "w",
 				},
-				Paragraph: make([]*Paragraph, 0),
+				Content: make([]interface{}, 0),
 			},
 		},
 		DocRelation: DocRelation{
@@ -83,7 +83,7 @@ func (f *File) AddParagraph() *Paragraph {
 		file: f,
 	}
 
-	f.Document.Body.Paragraph = append(f.Document.Body.Paragraph, p)
+	f.Document.Body.Content = append(f.Document.Body.Content, p)
 	return p
 }
 

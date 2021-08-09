@@ -1,11 +1,29 @@
 package main
 
 import (
-	"github.com/gingfrederik/docx"
+	"github.com/srdolor/docx"
 )
 
 func main() {
 	f := docx.NewFile()
+	// add new table
+	t := f.AddTable()
+
+	for i := 0; i < 3; i++ {
+		row := t.AddRow()
+		for i := 0; i < 3; i++ {
+			c := row.AddCell()
+			c.AddText("Hello").Size(20).Color("fbfcda")
+		}
+	}
+	row := t.AddRow()
+	c := row.AddCell()
+	c.AddText("One column")
+	row = t.AddRow()
+	c = row.AddCell()
+	c.AddText("Two columns")
+	c = row.AddCell()
+	c.AddText("Two columns")
 	// add new paragraph
 	para := f.AddParagraph()
 	// add text

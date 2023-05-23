@@ -3,6 +3,7 @@ package docx
 import (
 	"archive/zip"
 	"encoding/xml"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -47,6 +48,7 @@ func NewFile() *File {
 				},
 				Paragraph: make([]*Paragraph, 0),
 			},
+			Pictures: make([]*Picture, 0),
 		},
 		DocRelation: DocRelation{
 			Xmlns:        XMLNS,
@@ -74,6 +76,22 @@ func (f *File) Write(writer io.Writer) (err error) {
 	defer zipWriter.Close()
 
 	return f.pack(zipWriter)
+}
+
+func (f *File) AddImage(name string, imageData []byte) (err error) {
+	if name == "" {
+		return fmt.Errorf("name cannot be empty")
+	}
+	if imageData == nil || len(imageData) < 1 {
+		return fmt.Errorf("image data cannot be nil or empty slice")
+	}
+
+	f.Document.Pictures = append(f.Document.Pictures, &Picture{
+		Name: name,
+		Data: imageData,
+	})
+
+	return nil
 }
 
 // AddParagraph add new paragraph
@@ -112,6 +130,7 @@ func (f *File) pack(zipWriter *zip.Writer) (err error) {
 	files["word/styles.xml"] = TEMP_WORD_STYLE
 	files["[Content_Types].xml"] = TEMP_CONTENT
 	files["word/_rels/document.xml.rels"], err = marshal(f.DocRelation)
+
 	if err != nil {
 		return err
 	}
@@ -127,6 +146,18 @@ func (f *File) pack(zipWriter *zip.Writer) (err error) {
 		}
 
 		_, err = w.Write([]byte(data))
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, img := range f.Document.Pictures {
+		w, err := zipWriter.Create("images/" + img.Name)
+		if err != nil {
+			return err
+		}
+
+		_, err = w.Write([]byte(img.Data))
 		if err != nil {
 			return err
 		}

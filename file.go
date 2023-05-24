@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type File struct {
@@ -40,8 +41,9 @@ func NewFile() *File {
 			XMLName: xml.Name{
 				Space: "w",
 			},
-			XMLW: XMLNS_W,
-			XMLR: XMLNS_R,
+			XMLW:  XMLNS_W,
+			XMLR:  XMLNS_R,
+			XMLWP: XMLNS_DRAWING_WORD_PROCESSING,
 			Body: &Body{
 				XMLName: xml.Name{
 					Space: "w",
@@ -120,6 +122,20 @@ func (f *File) addLinkRelation(link string) string {
 	return rel.ID
 }
 
+func (f *File) addImageRelation(pic *Picture) string {
+	rel := &RelationShip{
+		ID:     "rId" + strconv.Itoa(f.rId),
+		Type:   REL_IMAGE,
+		Target: pic.MediaName(),
+	}
+
+	f.rId += 1
+
+	f.DocRelation.Relationship = append(f.DocRelation.Relationship, rel)
+
+	return rel.ID
+}
+
 func (f *File) pack(zipWriter *zip.Writer) (err error) {
 	files := map[string]string{}
 
@@ -128,7 +144,6 @@ func (f *File) pack(zipWriter *zip.Writer) (err error) {
 	files["docProps/core.xml"] = TEMP_DOCPROPS_CORE
 	files["word/theme/theme1.xml"] = TEMP_WORD_THEME_THEME
 	files["word/styles.xml"] = TEMP_WORD_STYLE
-	files["[Content_Types].xml"] = TEMP_CONTENT
 	files["word/_rels/document.xml.rels"], err = marshal(f.DocRelation)
 
 	if err != nil {
@@ -139,6 +154,25 @@ func (f *File) pack(zipWriter *zip.Writer) (err error) {
 		return err
 	}
 
+	var imageOverrides strings.Builder
+	for _, img := range f.Document.Pictures {
+		w, err := zipWriter.Create("word/" + img.MediaName())
+		if err != nil {
+			return err
+		}
+
+		_, err = w.Write([]byte(img.Data))
+		if err != nil {
+			return err
+		}
+
+		imageOverrides.WriteString(fmt.Sprintf(`<Override PartName="/word/%s" ContentType="%s" />`, img.MediaName(), img.ContentType()))
+	}
+
+	contentTypesXML := strings.ReplaceAll(TEMP_CONTENT, "{{imageOverides}}", imageOverrides.String())
+
+	files["[Content_Types].xml"] = contentTypesXML
+
 	for path, data := range files {
 		w, err := zipWriter.Create(path)
 		if err != nil {
@@ -146,18 +180,6 @@ func (f *File) pack(zipWriter *zip.Writer) (err error) {
 		}
 
 		_, err = w.Write([]byte(data))
-		if err != nil {
-			return err
-		}
-	}
-
-	for _, img := range f.Document.Pictures {
-		w, err := zipWriter.Create("images/" + img.Name)
-		if err != nil {
-			return err
-		}
-
-		_, err = w.Write([]byte(img.Data))
 		if err != nil {
 			return err
 		}

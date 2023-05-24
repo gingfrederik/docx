@@ -7,6 +7,7 @@ type Run struct {
 	RunProperties *RunProperties `xml:"w:rPr,omitempty"`
 	InstrText     string         `xml:"w:instrText,omitempty"`
 	Text          *Text
+	Drawing       *Drawing `xml:"w:drawing,omitempty"`
 }
 
 type Text struct {

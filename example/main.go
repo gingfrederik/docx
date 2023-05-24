@@ -27,6 +27,7 @@ func main() {
 		panic(err)
 	}
 
+	nextPara = f.AddParagraph()
 	err = nextPara.AddImage("TEACHING_GOPHER.png" /* Add options for the image */)
 	if err != nil {
 		panic(err)

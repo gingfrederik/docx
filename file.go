@@ -3,9 +3,11 @@ package docx
 import (
 	"archive/zip"
 	"encoding/xml"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type File struct {
@@ -39,14 +41,16 @@ func NewFile() *File {
 			XMLName: xml.Name{
 				Space: "w",
 			},
-			XMLW: XMLNS_W,
-			XMLR: XMLNS_R,
+			XMLW:  XMLNS_W,
+			XMLR:  XMLNS_R,
+			XMLWP: XMLNS_DRAWING_WORD_PROCESSING,
 			Body: &Body{
 				XMLName: xml.Name{
 					Space: "w",
 				},
 				Paragraph: make([]*Paragraph, 0),
 			},
+			Pictures: make([]*Picture, 0),
 		},
 		DocRelation: DocRelation{
 			Xmlns:        XMLNS,
@@ -76,6 +80,22 @@ func (f *File) Write(writer io.Writer) (err error) {
 	return f.pack(zipWriter)
 }
 
+func (f *File) AddImage(name string, imageData []byte) (err error) {
+	if name == "" {
+		return fmt.Errorf("name cannot be empty")
+	}
+	if imageData == nil || len(imageData) < 1 {
+		return fmt.Errorf("image data cannot be nil or empty slice")
+	}
+
+	f.Document.Pictures = append(f.Document.Pictures, &Picture{
+		Name: name,
+		Data: imageData,
+	})
+
+	return nil
+}
+
 // AddParagraph add new paragraph
 func (f *File) AddParagraph() *Paragraph {
 	p := &Paragraph{
@@ -102,6 +122,20 @@ func (f *File) addLinkRelation(link string) string {
 	return rel.ID
 }
 
+func (f *File) addImageRelation(pic *Picture) string {
+	rel := &RelationShip{
+		ID:     "rId" + strconv.Itoa(f.rId),
+		Type:   REL_IMAGE,
+		Target: pic.MediaName(),
+	}
+
+	f.rId += 1
+
+	f.DocRelation.Relationship = append(f.DocRelation.Relationship, rel)
+
+	return rel.ID
+}
+
 func (f *File) pack(zipWriter *zip.Writer) (err error) {
 	files := map[string]string{}
 
@@ -110,8 +144,8 @@ func (f *File) pack(zipWriter *zip.Writer) (err error) {
 	files["docProps/core.xml"] = TEMP_DOCPROPS_CORE
 	files["word/theme/theme1.xml"] = TEMP_WORD_THEME_THEME
 	files["word/styles.xml"] = TEMP_WORD_STYLE
-	files["[Content_Types].xml"] = TEMP_CONTENT
 	files["word/_rels/document.xml.rels"], err = marshal(f.DocRelation)
+
 	if err != nil {
 		return err
 	}
@@ -119,6 +153,25 @@ func (f *File) pack(zipWriter *zip.Writer) (err error) {
 	if err != nil {
 		return err
 	}
+
+	var imageOverrides strings.Builder
+	for _, img := range f.Document.Pictures {
+		w, err := zipWriter.Create("word/" + img.MediaName())
+		if err != nil {
+			return err
+		}
+
+		_, err = w.Write([]byte(img.Data))
+		if err != nil {
+			return err
+		}
+
+		imageOverrides.WriteString(fmt.Sprintf(`<Override PartName="/word/%s" ContentType="%s" />`, img.MediaName(), img.ContentType()))
+	}
+
+	contentTypesXML := strings.ReplaceAll(TEMP_CONTENT, "{{imageOverides}}", imageOverrides.String())
+
+	files["[Content_Types].xml"] = contentTypesXML
 
 	for path, data := range files {
 		w, err := zipWriter.Create(path)

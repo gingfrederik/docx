@@ -5,6 +5,7 @@ import "encoding/xml"
 const (
 	XMLNS         = `http://schemas.openxmlformats.org/package/2006/relationships`
 	REL_HYPERLINK = `http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink`
+	REL_IMAGE     = `http://schemas.openxmlformats.org/officeDocument/2006/relationships/image`
 
 	REL_TARGETMODE = "External"
 )

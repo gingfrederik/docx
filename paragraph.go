@@ -1,6 +1,9 @@
 package docx
 
-import "encoding/xml"
+import (
+	"encoding/xml"
+	"fmt"
+)
 
 type Paragraph struct {
 	XMLName xml.Name `xml:"w:p"`
@@ -43,4 +46,27 @@ func (p *Paragraph) AddLink(text string, link string) *Hyperlink {
 	p.Data = append(p.Data, hyperlink)
 
 	return hyperlink
+}
+
+func (p *Paragraph) AddImage(name string) error {
+	if name == "" {
+		return fmt.Errorf("'name' MUST not be null or empty")
+	}
+
+	var pic *Picture = nil
+	for _, entry := range p.file.Document.Pictures {
+		if name == entry.Name {
+			pic = entry
+			break
+		}
+	}
+	if pic == nil {
+		return fmt.Errorf("image named %s not found in p.file.Document.Pictures", name)
+	}
+
+	pic.RelID = p.file.addImageRelation(pic)
+
+	p.Data = append(p.Data, &Run{Drawing: pic.Drawing()})
+
+	return nil
 }

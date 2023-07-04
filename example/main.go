@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/gingfrederik/docx"
 )
 
@@ -17,6 +19,19 @@ func main() {
 
 	nextPara := f.AddParagraph()
 	nextPara.AddLink("google", `http://google.com`)
+
+	imageData, _ := os.ReadFile("./TEACHING_GOPHER.png")
+
+	err := f.AddImage("TEACHING_GOPHER.png", imageData)
+	if err != nil {
+		panic(err)
+	}
+
+	nextPara = f.AddParagraph()
+	err = nextPara.AddImage("TEACHING_GOPHER.png" /* Add options for the image */)
+	if err != nil {
+		panic(err)
+	}
 
 	f.Save("./test.docx")
 }
